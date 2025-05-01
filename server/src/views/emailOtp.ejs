@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Verification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: white;
+        }
+        
+        .logo span {
+            color: #f97316;
+        }
+        
+        h2 {
+            color: white;
+            margin-top: 0;
+            font-weight: 600;
+            font-size: 24px;
+        }
+        
+        /* Content */
+        .content {
+            padding: 30px;
+        }
+        
+        .otp-container {
+            background-color: #fff7ed;
+            border: 2px dashed #fdba74;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .otp-code {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: #2563eb;
+            margin: 20px 0;
+            padding: 12px 24px;
+            background-color: #eff6ff;
+            border-radius: 6px;
+            display: inline-block;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .expiry-note {
+            color: #ea580c;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        
+        /* Button */
+        .button {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 25px 0;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding: 25px 30px;
+            background-color: #f8fafc;
+            font-size: 13px;
+            color: #64748b;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .social-links {
+            margin: 20px 0;
+        }
+        
+        .social-icon {
+            margin: 0 8px;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .company-info {
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+        
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100%;
+                border-radius: 0;
+                margin: 0;
+            }
+            
+            .content {
+                padding: 25px 15px;
+            }
+            
+            .otp-code {
+                font-size: 28px;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="padding: 20px;">
+        <div class="container">
+            <div class="header">
+                <div class="logo">CRYSTAL<span>EVENTS</span></div>
+                <h2>Verify Your Email Address</h2>
+            </div>
+            
+            <div class="content">
+                <p>Hello,</p>
+                <p>Welcome to Crystal Event Management System! To complete your registration, please use the following verification code:</p>
+                
+                <div class="otp-container">
+                    <div style="font-size: 15px; color: #4b5563;">Your one-time verification code</div>
+                    <div class="otp-code"><%= otp %></div>
+                    <div class="expiry-note">⚠️ Expires in 10 minutes</div>
+                </div>
+                
+                <p style="margin-bottom: 25px;">For security reasons, please don't share this code with anyone. If you didn't request this, please ignore this email or contact our support team immediately.</p>
+                
+                <p>Best regards,<br><strong>The Crystal Events Team</strong></p>
+            </div>
+            
+            <div class="footer">
+                <div class="social-links">
+                    <a href="#" class="social-icon">Twitter</a> | 
+                    <a href="#" class="social-icon">Facebook</a> | 
+                    <a href="#" class="social-icon">Instagram</a>
+                </div>
+                <div class="company-info">
+                    <p>© 2023 Crystal Event Management System. All rights reserved.</p>
+                    <p>123 Event Plaza, Suite 500, San Francisco, CA 94107</p>
+                    <p>Need help? Contact us at support@crystal-events.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
