@@ -11,8 +11,8 @@ module.exports = (sequelize) => {
 
   User.init({
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4, // Auto-generate UUID
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       allowNull: false,
       primaryKey: true
     },
@@ -51,7 +51,7 @@ module.exports = (sequelize) => {
   }, {
     sequelize,
     modelName: 'User',
-    timestamps: true, // adds createdAt and updatedAt
+    timestamps: true,
   });
 
   return User;

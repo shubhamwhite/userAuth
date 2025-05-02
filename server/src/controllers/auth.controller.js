@@ -1,48 +1,44 @@
 const db = require("../models");
 const { User: _User } = db;
-const { generateUUID } = require("../utils/generateUUID");
+const {deleteImage} = require("../helper/imageUpload.helper");
 const { generateOTP } = require("../utils/generateOTP");
-const { responder } = require("../utils/responseHandler");
+const { responder } = require("../constant/response");
 const sendOtpToEmail = require("../service/emailProvider");
 const generateToken = require("../utils/generateToken");
+const CustomErrorHandler = require("../utils/CustomError");
 const bcrypt = require("bcrypt");
 const URL = require("../constant/url");
-const { where } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
 
 exports.signup = async (req, res, next) => {
   try {
-    const id = generateUUID();
-    const { name, email, password, repeat_password } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!name || !email || !password || !repeat_password) {
-      return responder(res, 400, "All fields are required");
-    }
-
-    if (password !== repeat_password) {
-      return responder(res, 400, "Password and repeat password do not match");
-    }
-
-    const profileImagePath = req.file
-      ? `${URL.BASE}/uploads/${req.file.filename}`
-      : `${URL.BASE}/uploads/user.png`;
+    // Handle optional profile image
+    const profileImagePath = req.file && req.file.filename
+      ? `/uploads/${req.file.filename}`
+      : `/uploads/user.png`;
 
     const existingUser = await _User.findOne({ where: { email } });
 
     if (existingUser) {
-      return responder(res, 409, "User already exists");
+      if (req.file && req.file.filename) {
+        deleteImage(req.file.filename);
+      }
+      return next(CustomErrorHandler.alreadyExist("User already exists"));
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP(6);
 
     const newUser = await _User.create({
-      id,
       name,
       email,
       password: hashedPassword,
       verification_otp: otp,
       is_verified: false,
-      otp_expires_at: new Date(Date.now() + 10 * 60 * 1000),
+      otp_expires_at: new Date(Date.now() + 10 * 60 * 1000), // 10 mins
       profile_image: profileImagePath,
     });
 
@@ -53,17 +49,24 @@ exports.signup = async (req, res, next) => {
     const token = generateToken({ id: newUser.id, email: newUser.email });
     res.cookie("token", token, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true });
 
-    return responder(
-      res,
-      201,
-      "User created successfully. Check your email for OTP verification",
-      { user, token }
-    );
+    user.profile_image = `${URL.BASE}${user.profile_image}`;
+
+    return res.status(201).json({
+      message: "User created successfully. Check your email for OTP verification",
+      user,
+      token
+    });
+
   } catch (err) {
+
+    if (req.file && req.file.filename) {
+      deleteImage(req.file.filename);
+    }
     console.error("Error in signup:", err);
     return next(err);
   }
 };
+
 
 
 exports.verifyOtp = async (req, res, next) => {
@@ -100,6 +103,7 @@ exports.verifyOtp = async (req, res, next) => {
 };
 
 exports.login = async (req, res, next) => {
+
   try {
     const { email, password } = req.body;
 
@@ -120,7 +124,7 @@ exports.login = async (req, res, next) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return responder(res, 401, "Invalid password");
+      return responder(res, 401, "Invalid email and password");
     }
 
     const { password: _, ...userData } = user.dataValues;
@@ -223,24 +227,65 @@ exports.logout = async (req, res, next) => {
   }
 };
 
+
 exports.getUser = async (req, res, next) => {
+
   try {
+
     const userId = req.params.id;
 
-    const user = await _User.findOne({where: { id: userId }, attributes: ['id', 'name', 'email', 'profile_image']});
+    const user = await _User.findOne({
+      where: { id: userId },
+      attributes: ['id', 'name', 'email', 'profile_image'],
+    });
+
+   
+    const imagePath = user.profile_image;
+    const split = imagePath.split('/');
+    const fileName = split[split.length - 1];
+    console.log("fileName", fileName);
+    
+    const filePath = path.join(__dirname, '..', 'uploads', 'Profile-Pic');
+    const files = fs.readdirSync(filePath);
+    
+    let fileExists = false;
+    
+    for (const file of files) {
+      if (file === fileName) {
+        fileExists = true;
+        console.log("File exists");
+        break;
+      }
+    }
+    
+    // Avoid double prepending if already full URL
+    if (fileExists) {
+      if (!imagePath.startsWith(URL.BASE)) {
+        user.profile_image = `/uploads/${fileName}`;
+      } else {
+        user.profile_image = imagePath;
+      }
+    } else {
+      user.profile_image = `/uploads/user.png`;
+    }
+    
+    
 
     if (!user) {
-      return responder(res, 404, "User not found");
+      return next(CustomErrorHandler.notFound("User not found"));
     }
 
-    const { password: _, ...userData } = user.dataValues;
+    let userData = user.toJSON();
+
+
+    if (userData.profile_image) {
+      userData.profile_image = `${URL.BASE}${userData.profile_image}`;
+    }
 
     return responder(res, 200, "User fetched successfully", userData);
 
   } catch (err) {
-    
     console.error("Error in getUser:", err);
     return next(err);
-  
   }
 };

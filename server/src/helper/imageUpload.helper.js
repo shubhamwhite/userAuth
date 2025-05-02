@@ -35,4 +35,21 @@ const upload = multer({
   limits: { fileSize: 2 * 1024 * 1024 } // 2MB
 });
 
-module.exports = upload;
+// Delete image function
+
+const deleteImage = (filename, folder = 'Profile-Pic') => {
+  if (!filename) return;
+
+  const filePath = path.join(__dirname, '..', 'uploads', folder, filename);
+
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      console.error("Failed to delete uploaded file:", err);
+    } else {
+      console.log(`Deleted file: ${filePath}`);
+    }
+  });
+};
+
+module.exports = {deleteImage, upload};
+

@@ -13,6 +13,7 @@ const transporter = nodeMailer.createTransport({
 const sendOtpToEmail = async (email, otp) => {
     try {
         const emailTemplatePath = path.join(__dirname, '../views/emailOtp.ejs');
+        
         const html = await ejs.renderFile(emailTemplatePath, { otp });
         
         const info = await transporter.sendMail({

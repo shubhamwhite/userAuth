@@ -1,23 +1,29 @@
-const config = require('../config'); // Adjust the path as needed
+const config = require('../config');
+const {ValidationError} = require('joi');
+const CustomErrorHandler = require('../utils/CustomError');
 
-const errorHandler = (err, req, res, next) => { 
-  const nodeEnv = config.get('DEBUG_MODE'); // Fetch NODE_ENV using the config file
-
-  // Log the error stack trace for debugging in development
-  if (nodeEnv === 'true') {
-    console.error(err.stack);
+const errorHandler = (err, req, res, next) => {
+  let statusCode = 500;
+  let data = {
+      message: 'Internal server error',
+      ...(config.get('DEBUG_MODE') === 'true' && { originalError: err.message })
   }
 
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
+  if (err instanceof ValidationError) {
+      statusCode = 422;
+      data = {
+          message: err.message
+      }
+  }
 
-  // Send the error response
-  res.status(statusCode).json({
-    status: "error",
-    statusCode,
-    message,
-    ...(nodeEnv === 'true' && { stack: err.stack }), 
-  });
+  if (err instanceof CustomErrorHandler) {
+      statusCode = err.status;
+      data = {
+          message: err.message
+      }
+  }
+
+  return res.status(statusCode).json(data);
 }
 
 module.exports = errorHandler;
