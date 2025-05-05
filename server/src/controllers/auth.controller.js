@@ -1,6 +1,6 @@
 const db = require("../models");
 const { User: _User } = db;
-const {deleteImage} = require("../helper/imageUpload.helper");
+const { deleteImage } = require("../helper/imageUpload.helper");
 const { generateOTP } = require("../utils/generateOTP");
 const { responder } = require("../constant/response");
 const sendOtpToEmail = require("../service/emailProvider");
@@ -16,9 +16,10 @@ exports.signup = async (req, res, next) => {
     const { name, email, password } = req.body;
 
     // Handle optional profile image
-    const profileImagePath = req.file && req.file.filename
-      ? `/uploads/${req.file.filename}`
-      : `/uploads/user.png`;
+    const profileImagePath =
+      req.file && req.file.filename
+        ? `/uploads/${req.file.filename}`
+        : `/uploads/user.png`;
 
     const existingUser = await _User.findOne({ where: { email } });
 
@@ -52,13 +53,12 @@ exports.signup = async (req, res, next) => {
     user.profile_image = `${URL.BASE}${user.profile_image}`;
 
     return res.status(201).json({
-      message: "User created successfully. Check your email for OTP verification",
+      message:
+        "User created successfully. Check your email for OTP verification",
       user,
-      token
+      token,
     });
-
   } catch (err) {
-
     if (req.file && req.file.filename) {
       deleteImage(req.file.filename);
     }
@@ -66,8 +66,6 @@ exports.signup = async (req, res, next) => {
     return next(err);
   }
 };
-
-
 
 exports.verifyOtp = async (req, res, next) => {
   try {
@@ -103,7 +101,6 @@ exports.verifyOtp = async (req, res, next) => {
 };
 
 exports.login = async (req, res, next) => {
-
   try {
     const { email, password } = req.body;
 
@@ -156,7 +153,7 @@ exports.resendOtpOrForgotPassword = async (req, res, next) => {
       user.verification_otp = otp;
       user.otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // expires in 10 minutes
       await user.save();
-      await sendOtpToEmail(email, otp);
+      await sendOtpToEmail(email, otp, user.name, flag);
       return responder(res, 200, message);
     };
 
@@ -227,29 +224,25 @@ exports.logout = async (req, res, next) => {
   }
 };
 
-
 exports.getUser = async (req, res, next) => {
-
   try {
-
     const userId = req.params.id;
 
     const user = await _User.findOne({
       where: { id: userId },
-      attributes: ['id', 'name', 'email', 'profile_image'],
+      attributes: ["id", "name", "email", "profile_image"],
     });
 
-   
     const imagePath = user.profile_image;
-    const split = imagePath.split('/');
+    const split = imagePath.split("/");
     const fileName = split[split.length - 1];
     console.log("fileName", fileName);
-    
-    const filePath = path.join(__dirname, '..', 'uploads', 'Profile-Pic');
+
+    const filePath = path.join(__dirname, "..", "uploads", "Profile-Pic");
     const files = fs.readdirSync(filePath);
-    
+
     let fileExists = false;
-    
+
     for (const file of files) {
       if (file === fileName) {
         fileExists = true;
@@ -257,7 +250,7 @@ exports.getUser = async (req, res, next) => {
         break;
       }
     }
-    
+
     // Avoid double prepending if already full URL
     if (fileExists) {
       if (!imagePath.startsWith(URL.BASE)) {
@@ -268,8 +261,6 @@ exports.getUser = async (req, res, next) => {
     } else {
       user.profile_image = `/uploads/user.png`;
     }
-    
-    
 
     if (!user) {
       return next(CustomErrorHandler.notFound("User not found"));
@@ -277,15 +268,94 @@ exports.getUser = async (req, res, next) => {
 
     let userData = user.toJSON();
 
-
     if (userData.profile_image) {
       userData.profile_image = `${URL.BASE}${userData.profile_image}`;
     }
 
     return responder(res, 200, "User fetched successfully", userData);
-
   } catch (err) {
     console.error("Error in getUser:", err);
+    return next(err);
+  }
+};
+
+exports.updateUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const { name, email, password, otp } = req.body;
+
+    const user = await _User.findByPk(userId);
+    if (!user) {
+      if (req.file && req.file.filename) deleteImage(req.file.filename);
+      return next(CustomErrorHandler.notFound("User not found"));
+    }
+
+    if (!user.is_verified) {
+      if (req.file && req.file.filename) deleteImage(req.file.filename);
+      return next(CustomErrorHandler.unprocessableEntity("Please verify your account before updating profile"));
+    }
+
+    // Handle profile image update
+    let profileImagePath = user.profile_image;
+
+    if (req.file && req.file.filename) {
+      // Delete old image if it's not the default one
+      if (user.profile_image && !user.profile_image.includes("user.png")) {
+        const oldImage = user.profile_image.split("/").pop(); // get filename only
+        deleteImage(oldImage); // delete old file
+      }
+
+      // Set new profile image path
+      profileImagePath = `/uploads/${req.file.filename}`;
+    }
+
+    // Handle password update ONLY if OTP is provided and valid
+    let hashedPassword = user.password;
+    if (password) {
+      if (!otp) {
+        return next(
+          CustomErrorHandler.unprocessableEntity(
+            "OTP is required to update password"
+          )
+        );
+      }
+      if (
+        user.verification_otp !== otp ||
+        new Date(user.otp_expires_at) < new Date()
+      ) {
+        return next(
+          CustomErrorHandler.unprocessableEntity("Invalid or expired OTP")
+        );
+      }
+
+      hashedPassword = await bcrypt.hash(password, 10);
+
+      // clear OTP fields
+      user.verification_otp = null;
+      user.otp_expires_at = null;
+    }
+
+    await user.update({
+      name: name || user.name,
+      email: email || user.email,
+      password: hashedPassword,
+      profile_image: profileImagePath,
+      verification_otp: user.verification_otp,
+      otp_expires_at: user.otp_expires_at,
+    });
+
+    const { password: _, ...updatedUser } = user.dataValues;
+    updatedUser.profile_image = `${URL.BASE}${updatedUser.profile_image}`;
+
+    return res.status(200).json({
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    if (req.file && req.file.filename) {
+      deleteImage(req.file.filename);
+    }
+    console.error("Error in updateUser:", err);
     return next(err);
   }
 };

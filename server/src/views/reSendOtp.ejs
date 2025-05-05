@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Email Verification</title>
+    <title>Resend OTP</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Base Styles */
@@ -156,20 +156,22 @@
         <div class="container">
             <div class="header">
                 <div class="logo">CRYSTAL<span>EVENTS</span></div>
-                <h2>Verify Your Email Address</h2>
+                <h2>New Verification Code</h2>
             </div>
             
             <div class="content">
-                <p>Hello, <%= name %> </p>
-                <p>Welcome to Crystal Event Management System! To complete your registration, please use the following verification code:</p>
+                <p>Hello, <%= name %>,</p>
+                <p>We received a request for a new verification code for your Crystal Events account. Here's your new one-time password:</p>
                 
                 <div class="otp-container">
-                    <div style="font-size: 15px; color: #4b5563;">Your one-time verification code</div>
+                    <div style="font-size: 15px; color: #4b5563;">Your new verification code</div>
                     <div class="otp-code"><%= otp %></div>
                     <div class="expiry-note">⚠️ Expires in 10 minutes</div>
                 </div>
                 
-                <p style="margin-bottom: 25px;">For security reasons, please don't share this code with anyone. If you didn't request this, please ignore this email or contact our support team immediately.</p>
+                <p style="margin-bottom: 25px;">For your security, this code will only be valid for a short time. If you didn't request this code, please secure your account by changing your password immediately.</p>
+                
+                <p>Need help? <a href="mailto:support@crystal-events.com" style="color: #2563eb; text-decoration: none;">Contact our support team</a>.</p>
                 
                 <p>Best regards,<br><strong>The Crystal Events Team</strong></p>
             </div>

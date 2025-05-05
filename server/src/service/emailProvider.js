@@ -10,26 +10,44 @@ const transporter = nodeMailer.createTransport({
     },
 });
 
-const sendOtpToEmail = async (email, otp) => {
+const sendOtpToEmail = async (email, otp, name, flag = "verify") => {
     try {
-        const emailTemplatePath = path.join(__dirname, '../views/emailOtp.ejs');
-        
-        const html = await ejs.renderFile(emailTemplatePath, { otp });
-        
-        const info = await transporter.sendMail({
-            from: config.get('EMAIL_USER'),
-            to: email,
-            subject: 'Your email verification OTP',
-            text: `Your email verification code is ${otp}. It will expire in 10 minutes.`,
-            html: html
-        });
-        
-        console.log("Message sent: %s", info.messageId);
-        return info;
+      let templatePath;
+      let subject;
+  
+      switch (flag) {
+        case "forgot_password":
+          templatePath = path.join(__dirname, "../views/passwordResetOtp.ejs");
+          subject = "Reset Your Password";
+          break;
+        case "resend_otp":
+          templatePath = path.join(__dirname, "../views/reSendOtp.ejs");
+          subject = "Resend OTP for Verification";
+          break;
+        case "verify":
+        default:
+          templatePath = path.join(__dirname, "../views/emailOtp.ejs");
+          subject = "Your Email Verification OTP";
+          break;
+      }
+  
+      const html = await ejs.renderFile(templatePath, { otp, name });
+  
+      const info = await transporter.sendMail({
+        from: config.get("EMAIL_USER"),
+        to: email,
+        subject,
+        text: `Your OTP is ${otp}. It will expire in 10 minutes.`,
+        html,
+      });
+  
+      console.log("Message sent: %s", info.messageId);
+      return info;
     } catch (error) {
-        console.error('Error sending email:', error.message);
-        throw new Error('Failed to send email');
+      console.error("Error sending email:", error.message);
+      throw new Error("Failed to send email");
     }
-}
+  };
+  
 
 module.exports = sendOtpToEmail;

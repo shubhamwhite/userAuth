@@ -24,6 +24,10 @@ class CustomErrorHandler extends Error {
     static serverError(message = 'Internal server error') {
         return new CustomErrorHandler(500, message);
     }
+
+    static unprocessableEntity(message = 'Unprocessable Entity') {
+        return new CustomErrorHandler(422, message);
+    }
 }
 
 module.exports = CustomErrorHandler;
