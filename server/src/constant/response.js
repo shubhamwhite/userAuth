@@ -2,8 +2,8 @@ const responder = (res, statusCode, message, data = null) => {
     res.status(statusCode).json({
         status: statusCode,
         message: message,
-        data: data
-    });
+        data: data,
+    })
 }
 
-module.exports = {responder};
+module.exports = { responder }
